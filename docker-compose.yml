@@ -62,7 +62,7 @@ services:
         - "rabbit:nameko-example-rabbitmq"
         - "postgres:nameko-example-postgres"
     environment:
-        DB_PASSWORD: "password"
+        DB_PASSWORD: "postgres"
         DB_USER: "postgres"
         DB_HOST: "postgres"
         DB_NAME: "orders"
