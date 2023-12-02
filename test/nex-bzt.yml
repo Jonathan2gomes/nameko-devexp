@@ -19,95 +19,126 @@ scenarios:
     default-address: http://localhost:8000
 
     requests:
-    # 1. Create Product
-    - url: /products
-      label: products-create
-      think-time: uniform(0s, 0s)
-      method: POST
-      headers:
-        cache-control: no-cache
-        Content-Type: application/json
-      body: 'request-body-string'
-      body: >
-        {
-          "id": "${id}-${__javaScript(Math.random())}",
-          "title": "${title}",
-          "passenger_capacity": ${passenger_capacity},
-          "maximum_speed": ${maximum_speed},
-          "in_stock": ${in_stock}
-        }          
-      assert:
-      - contains:
-        - 200
-        subject: http-code
-        not: false
-      extract-jsonpath:
-        product_id: $.id
-        default: NOT_FOUND
+      # 1. Create Product
+      - url: /products
+        label: products-create
+        think-time: uniform(0s, 0s)
+        method: POST
+        headers:
+          cache-control: no-cache
+          Content-Type: application/json
+        body: 'request-body-string'
+        body: >
+          {
+            "id": "${id}-${__javaScript(Math.random())}",
+            "title": "${title}",
+            "passenger_capacity": ${passenger_capacity},
+            "maximum_speed": ${maximum_speed},
+            "in_stock": ${in_stock}
+          }
+        assert:
+        - contains:
+          - 200
+          subject: http-code
+          not: false
+        extract-jsonpath:
+          product_id: $.id
+          default: NOT_FOUND
 
-    - if: '"${product_id}" == "NOT_FOUND"'
-      then:
-        - action: continue
+      # 2. Delete Product (Soft Delete)
+      - url: /products/${product_id}
+        label: product-delete
+        think-time: uniform(0s, 0s)
+        method: DELETE
+        headers:
+          cache-control: no-cache
+        assert:
+        - contains:
+          - 200
+          subject: http-code
+          not: false
+          default: NOT_FOUND
 
-    # 2. Get Product
-    - url: /products/${product_id}
-      label: product-get
-      think-time: uniform(0s, 0s)
-      method: GET
-        
-      assert:
-      - contains:
-        - 200
-        subject: http-code
-        not: false
-      extract-jsonpath:
-        product_key: $.id
-        default: NOT_FOUND
+      # 4. Create Product Again
+      - url: /products
+        label: products-create-again
+        think-time: uniform(0s, 0s)
+        method: POST
+        headers:
+          cache-control: no-cache
+          Content-Type: application/json
+        body: 'request-body-string'
+        body: >
+          {
+            "id": "${id}-${__javaScript(Math.random())}",
+            "title": "${title}",
+            "passenger_capacity": ${passenger_capacity},
+            "maximum_speed": ${maximum_speed},
+            "in_stock": ${in_stock}
+          }
+        assert:
+        - contains:
+          - 200
+          subject: http-code
+          not: false
+        extract-jsonpath:
+          new_product_id: $.id
+          default: NOT_FOUND
 
-    # 3. Create Orders
-    - url: /orders
-      label: orders-create
-      think-time: uniform(0s, 0s)
-      method: POST
-      headers:
-        cache-control: no-cache
-        Content-Type: application/json
-      body: 'request-body-string'
-      body: >
-        {
-          "order_details": [{"product_id": "${product_id}", "price": "100000.99", "quantity": 1}]
-        }
-      assert:
-      - contains:
-        - 200
-        subject: http-code
-        not: false
-      extract-jsonpath:
-        order_id: $.id
-        default: NOT_FOUND
-  
-    - if: '"${order_id}" == "NOT_FOUND"'
-      then:
-        - action: continue
-  
-    # 4. Get Orders
-    - url: /orders/${order_id}
-      label: order-get
-      think-time: uniform(0s, 0s)
-      method: GET
-        
-      assert:
-      - contains:
-        - 200
-        subject: http-code
-        not: false
-      extract-jsonpath:
-        order_id: $.id
-        default: NOT_FOUND
-        
-    - if: '"${order_id}" == "NOT_FOUND"'
-      then:
-        - action: continue
+
+
+      # 5. Create Orders
+      - url: /orders
+        label: orders-create
+        think-time: uniform(0s, 0s)
+        method: POST
+        headers:
+          cache-control: no-cache
+          Content-Type: application/json
+        body: 'request-body-string'
+        body: >
+          {
+            "order_details": [{"product_id": "${new_product_id}", "price": "100000.99", "quantity": 1}]
+          }
+        assert:
+        - contains:
+          - 200
+          subject: http-code
+          not: false
+        extract-jsonpath:
+          order_id: $.id
+          default: NOT_FOUND
+
+      # 6. Get Orders
+      - url: /orders/${order_id}
+        label: order-get
+        think-time: uniform(0s, 0s)
+        method: GET
+        headers:
+          cache-control: no-cache
+        assert:
+        - contains:
+          - 200
+          subject: http-code
+          not: false
+        extract-jsonpath:
+          order_id: $.id
+          default: NOT_FOUND
+
+      # 3. Get Product (Check if soft delete is working)
+      - url: /products/${product_id}
+        label: product-get
+        think-time: uniform(0s, 0s)
+        method: GET
+        headers:
+          cache-control: no-cache
+        assert:
+          - contains:
+              - 200
+            subject: http-code
+            not: false
+            default: NOT_FOUND
+
   
 reporting:
 - module: final-stats
