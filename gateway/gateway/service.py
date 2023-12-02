@@ -35,6 +35,21 @@ class GatewayService(object):
         )
 
     @http(
+        "DELETE", "/products/<string:product_id>",
+        expected_exceptions=(ProductNotFound, BadRequest)
+    )
+    def delete_product(self, request, product_id):
+        """Deletes a product by `product_id`
+        """
+        try:
+            self.products_rpc.delete(product_id)
+        except ProductNotFound:
+            raise ProductNotFound("Product with ID '{}' not found".format(product_id))
+
+        return Response(json.dumps({'message': 'Product deleted successfully'}), mimetype='application/json')
+
+
+    @http(
         "POST", "/products",
         expected_exceptions=(ValidationError, BadRequest)
     )
