@@ -121,6 +121,25 @@ scenarios:
         product_key: $.id
         default: NOT_FOUND
 
+
+      # 6. List All Orders (Paginated)
+    - url: /orders
+      label: orders-list-paginated
+      think-time: uniform(0s, 0s)
+      method: GET
+      params:
+        page: 1
+        per_page: 10
+
+      assert:
+        - contains:
+            - 200
+          subject: http-code
+          not: false
+      extract-jsonpath:
+        order_list: $..id
+        default: NOT_FOUND
+
     - if: '"${order_id}" == "NOT_FOUND"'
       then:
         - action: continue
