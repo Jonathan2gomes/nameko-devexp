@@ -27,4 +27,4 @@ export AMQP_URI=amqp://guest:guest@localhost:5672
 export POSTGRES_URI=postgresql://postgres:postgres@localhost:5433/orders
 export REDIS_URI=redis://localhost:6379/dev
 
-./run.sh $@ 
+./run.sh $@
