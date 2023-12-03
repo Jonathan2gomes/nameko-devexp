@@ -28,3 +28,8 @@ class OrderNotFound(Exception):
 @remote_error('products.exceptions.NotFound')
 class ProductNotFound(Exception):
     pass
+
+
+class UnavailableProduct(Exception):
+    """Raised when attempting to delete a product that is being used in an order."""
+    pass

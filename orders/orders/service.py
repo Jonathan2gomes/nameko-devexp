@@ -78,3 +78,12 @@ class OrdersService:
     @rpc
     def get_total_orders(self):
         return self.db.query(func.count(Order.id)).scalar()
+
+    @rpc
+    def get_order_by_product_id(self, product_id):
+        order = self.db.query(Order).filter(Order.order_details.any(product_id=product_id)).first()
+
+        if not order:
+            raise NotFound('Product with id {} is not associated with any order'.format(product_id))
+
+        return OrderSchema().dump(order).data
