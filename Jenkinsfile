@@ -87,7 +87,7 @@ pipeline {
                             # Configure pg_hdb.conf file
                             echo "host    all             all             0.0.0.0/0            trust" >> ${DB_DIR}/postgres/pg_hba.conf
                             echo "host    replication             all             0.0.0.0/0            trust" >> ${DB_DIR}/postgres/pg_hba.conf
-                            echo "port = 5432" >> ${DB_DIR}/postgres/my_custom.conf
+                            echo "port = 5433" >> ${DB_DIR}/postgres/my_custom.conf
                             echo "listen_addresses = '0.0.0.0'" >> ${DB_DIR}/postgres/my_custom.conf
                             echo "include = 'my_custom.conf'" >> ${DB_DIR}/postgres/postgresql.conf
 

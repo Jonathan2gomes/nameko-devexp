@@ -13,7 +13,7 @@ until nc -z localhost 6379; do
 done
 
 # Check if postgres is up and running before starting the service.
-until nc -z localhost 5432; do
+until nc -z localhost 5433; do
     echo "$(date) - waiting for postgres..."
     sleep 2
 done
@@ -24,7 +24,7 @@ con.autocommit=True;con.cursor().execute('CREATE DATABASE orders')""" 2> /dev/nu
 
 # setting up local environment
 export AMQP_URI=amqp://guest:guest@localhost:5672
-export POSTGRES_URI=postgresql://postgres:postgres@localhost:5432/orders
+export POSTGRES_URI=postgresql://postgres:postgres@localhost:5433/orders
 export REDIS_URI=redis://localhost:6379/dev
 
-./run.sh $@ 
+./run.sh $@

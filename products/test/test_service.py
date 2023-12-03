@@ -48,6 +48,24 @@ def test_list_productis_when_empty(service_container):
     assert [] == listed_products
 
 
+def test_delete_product(create_product, redis_client, service_container):
+    product_id = 'LZ127'
+    create_product(id=product_id, title='LZ 127', in_stock=10)
+
+    with entrypoint_hook(service_container, 'delete') as delete:
+        delete(product_id)
+
+    with pytest.raises(NotFound):
+        with entrypoint_hook(service_container, 'get') as get:
+            get(product_id)
+
+
+def test_delete_product_fails_on_not_found(service_container):
+    with pytest.raises(NotFound):
+        with entrypoint_hook(service_container, 'delete') as delete:
+            delete('nonexistent_product_id')
+
+
 def test_create_product(product, redis_client, service_container):
 
     with entrypoint_hook(service_container, 'create') as create:

@@ -7,7 +7,7 @@ from nameko.rpc import RpcProxy
 from werkzeug import Response
 
 from gateway.entrypoints import http
-from gateway.exceptions import OrderNotFound, ProductNotFound
+from gateway.exceptions import OrderNotFound, ProductNotFound, UnavailableProduct
 from gateway.schemas import CreateOrderSchema, GetOrderSchema, ProductSchema
 
 
@@ -33,6 +33,27 @@ class GatewayService(object):
             ProductSchema().dumps(product).data,
             mimetype='application/json'
         )
+
+    @http(
+        "DELETE", "/products/<string:product_id>",
+        expected_exceptions=(ProductNotFound, BadRequest, UnavailableProduct)
+    )
+    def delete_product(self, request, product_id):
+        try:
+            # Check if the product is being used in any order
+            self.orders_rpc.get_order_by_product_id(product_id)
+            # If the order is found, raise an exception
+            raise UnavailableProduct(
+                "Product with ID '{}' is associated with an order and cannot be deleted".format(product_id))
+        except OrderNotFound:
+            try:
+                # If the order is not found, proceed with the product deletion
+                self.products_rpc.delete(product_id)
+            except ProductNotFound:
+                # If the product is not found, raise an exception
+                raise ProductNotFound("Product with ID '{}' not found".format(product_id))
+
+        return Response(json.dumps({'message': 'Product deleted successfully'}), mimetype='application/json')
 
     @http(
         "POST", "/products",
@@ -93,9 +114,6 @@ class GatewayService(object):
         # raise``OrderNotFound``
         order = self.orders_rpc.get_order(order_id)
 
-        # Retrieve all products from the products service
-        product_map = {prod['id']: prod for prod in self.products_rpc.list()}
-
         # get the configured image root
         image_root = config['PRODUCT_IMAGE_ROOT']
 
@@ -103,7 +121,7 @@ class GatewayService(object):
         for item in order['order_details']:
             product_id = item['product_id']
 
-            item['product'] = product_map[product_id]
+            item['product'] = self.products_rpc.get(product_id)
             # Construct an image url.
             item['image'] = '{}/{}.jpg'.format(image_root, product_id)
 
@@ -156,13 +174,12 @@ class GatewayService(object):
         return Response(json.dumps({'id': id_}), mimetype='application/json')
 
     def _create_order(self, order_data):
-        # check order product ids are valid
-        valid_product_ids = {prod['id'] for prod in self.products_rpc.list()}
+        # check order product ids are valid doing a simple check by id
         for item in order_data['order_details']:
-            if item['product_id'] not in valid_product_ids:
-                raise ProductNotFound(
-                    "Product Id {}".format(item['product_id'])
-                )
+            try:
+                self.products_rpc.get(item['product_id'])
+            except ProductNotFound:
+                raise ProductNotFound("Product Id {} not found".format(item['product_id']))
 
         # Call orders-service to create the order.
         # Dump the data through the schema to ensure the values are serialized
@@ -172,3 +189,50 @@ class GatewayService(object):
             serialized_data['order_details']
         )
         return result['id']
+
+    @http(
+        "GET", "/orders",
+        expected_exceptions=OrderNotFound
+    )
+    def list_orders(self, request):
+        """
+        Gets a paginated list of orders.
+
+        Example request::
+
+            /orders?page=1&per_page=10
+
+        The response contains a paginated list of orders in a JSON document::
+
+            {
+                "orders": [...],
+                "total": 100
+            }
+        """
+
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+
+        # Get the configured image root
+        image_root = config['PRODUCT_IMAGE_ROOT']
+
+        orders_response = self.orders_rpc.list_orders(page=page, per_page=per_page)
+        total_orders = self.orders_rpc.get_total_orders()
+
+        for order in orders_response:
+            for item in order['order_details']:
+                product_id = item['product_id']
+
+                # Fetch product details from the products service
+                item['product'] = self.products_rpc.get(product_id)
+                # Construct an image URL
+                item['image'] = '{}/{}.jpg'.format(image_root, product_id)
+
+        response_data = {
+            "orders": orders_response,
+            "total": total_orders
+        }
+
+        return Response(
+            json.dumps(response_data), mimetype='application/json'
+        )
