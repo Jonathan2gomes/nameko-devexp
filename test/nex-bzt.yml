@@ -64,7 +64,45 @@ scenarios:
         product_key: $.id
         default: NOT_FOUND
 
-    # 3. Create Orders
+      # 3. Delete Product
+    - url: /products/${product_id}
+      label: product-delete
+      think-time: uniform(0s, 0s)
+      method: DELETE
+
+      assert:
+        - contains:
+            - 200
+          subject: http-code
+          not: false
+
+      # 4. Create Product
+    - url: /products
+      label: products-create-2
+      think-time: uniform(0s, 0s)
+      method: POST
+      headers:
+        cache-control: no-cache
+        Content-Type: application/json
+      body: 'request-body-string'
+      body: >
+        {
+          "id": "${id}-${__javaScript(Math.random())}",
+          "title": "${title}",
+          "passenger_capacity": ${passenger_capacity},
+          "maximum_speed": ${maximum_speed},
+          "in_stock": ${in_stock}
+        }
+      assert:
+        - contains:
+            - 200
+          subject: http-code
+          not: false
+      extract-jsonpath:
+        product_id: $.id
+        default: NOT_FOUND
+
+    # 5. Create Orders
     - url: /orders
       label: orders-create
       think-time: uniform(0s, 0s)
@@ -90,7 +128,7 @@ scenarios:
       then:
         - action: continue
 
-    # 4. Get Orders
+    # 6. Get Orders
     - url: /orders/${order_id}
       label: order-get
       think-time: uniform(0s, 0s)
@@ -105,24 +143,7 @@ scenarios:
         order_id: $.id
         default: NOT_FOUND
 
-
-      # 5. Delete Product
-    - url: /products/${product_id}
-      label: product-delete
-      think-time: uniform(0s, 0s)
-      method: DELETE
-
-      assert:
-        - contains:
-            - 200
-          subject: http-code
-          not: false
-      extract-jsonpath:
-        product_key: $.id
-        default: NOT_FOUND
-
-
-      # 6. List All Orders (Paginated)
+      # 7. List All Orders (Paginated)
     - url: /orders
       label: orders-list-paginated
       think-time: uniform(0s, 0s)

@@ -7,7 +7,7 @@ from nameko.rpc import RpcProxy
 from werkzeug import Response
 
 from gateway.entrypoints import http
-from gateway.exceptions import OrderNotFound, ProductNotFound
+from gateway.exceptions import OrderNotFound, ProductNotFound, UnavailableProduct
 from gateway.schemas import CreateOrderSchema, GetOrderSchema, ProductSchema
 
 
@@ -36,18 +36,24 @@ class GatewayService(object):
 
     @http(
         "DELETE", "/products/<string:product_id>",
-        expected_exceptions=(ProductNotFound, BadRequest)
+        expected_exceptions=(ProductNotFound, BadRequest, UnavailableProduct)
     )
     def delete_product(self, request, product_id):
-        """Deletes a product by `product_id`
-        """
         try:
-            self.products_rpc.delete(product_id)
-        except ProductNotFound:
-            raise ProductNotFound("Product with ID '{}' not found".format(product_id))
+            # Check if the product is being used in any order
+            self.orders_rpc.get_order_by_product_id(product_id)
+            # If the order is found, raise an exception
+            raise UnavailableProduct(
+                "Product with ID '{}' is associated with an order and cannot be deleted".format(product_id))
+        except OrderNotFound:
+            try:
+                # If the order is not found, proceed with the product deletion
+                self.products_rpc.delete(product_id)
+            except ProductNotFound:
+                # If the product is not found, raise an exception
+                raise ProductNotFound("Product with ID '{}' not found".format(product_id))
 
         return Response(json.dumps({'message': 'Product deleted successfully'}), mimetype='application/json')
-
 
     @http(
         "POST", "/products",
