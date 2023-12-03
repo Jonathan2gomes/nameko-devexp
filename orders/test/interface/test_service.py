@@ -94,3 +94,25 @@ def test_can_update_order(orders_rpc, order):
 def test_can_delete_order(orders_rpc, order, db_session):
     orders_rpc.delete_order(order.id)
     assert not db_session.query(Order).filter_by(id=order.id).count()
+
+
+@pytest.mark.usefixtures('db_session')
+def test_list_orders_empty(orders_rpc):
+    # When there are no orders in the database
+    orders_rpc.list_orders.return_value = []
+
+    # Perform the test
+    response = orders_rpc.list_orders()
+
+    # Verify the response
+    assert response == []
+
+
+@pytest.mark.usefixtures('order_details')
+def test_list_orders_single_page(orders_rpc):
+    response = orders_rpc.list_orders()
+
+    # Verify the response
+    assert response == [
+        {'id': 1, 'order_details': [{'product_id': 'the_odyssey', 'id': 1, 'quantity': 1, 'price': '99.51'},
+                                    {'product_id': 'the_enigma', 'id': 2, 'quantity': 8, 'price': '30.99'}]}]
