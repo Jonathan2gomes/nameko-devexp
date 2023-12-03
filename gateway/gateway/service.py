@@ -121,7 +121,6 @@ class GatewayService(object):
         for item in order['order_details']:
             product_id = item['product_id']
 
-            # item['product'] = product_map[product_id]
             item['product'] = self.products_rpc.get(product_id)
             # Construct an image url.
             item['image'] = '{}/{}.jpg'.format(image_root, product_id)
