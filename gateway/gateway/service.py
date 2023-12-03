@@ -196,13 +196,14 @@ class GatewayService(object):
         expected_exceptions=OrderNotFound
     )
     def list_orders(self, request):
-        """Gets a paginated list of orders.
+        """
+        Gets a paginated list of orders.
 
         Example request::
 
             /orders?page=1&per_page=10
 
-        The response contains a paginated list of orders in a json document::
+        The response contains a paginated list of orders in a JSON document::
 
             {
                 "orders": [...],
@@ -213,11 +214,23 @@ class GatewayService(object):
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
 
-        orders = self.orders_rpc.list_orders(page=page, per_page=per_page)
+        # Get the configured image root
+        image_root = config['PRODUCT_IMAGE_ROOT']
+
+        orders_response = self.orders_rpc.list_orders(page=page, per_page=per_page)
         total_orders = self.orders_rpc.get_total_orders()
 
+        for order in orders_response:
+            for item in order['order_details']:
+                product_id = item['product_id']
+
+                # Fetch product details from the products service
+                item['product'] = self.products_rpc.get(product_id)
+                # Construct an image URL
+                item['image'] = '{}/{}.jpg'.format(image_root, product_id)
+
         response_data = {
-            "orders": orders,
+            "orders": orders_response,
             "total": total_orders
         }
 
