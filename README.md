@@ -73,6 +73,12 @@ $ curl 'http://localhost:8003/products/the_odyssey'
   "in_stock": 10
 }
 ```
+
+#### Delete Product
+```sh
+$ curl --request DELETE 'http://localhost:8003/products/the_odyssey'
+```
+
 #### Create Order
 
 ```sh
@@ -104,6 +110,37 @@ $ curl 'http://localhost:8003/orders/1'
       }
     }
   ]
+}
+```
+
+#### Get All orders paginated
+
+```sh
+$ curl 'http://localhost:8003/orders?page=1&per_page=1'
+
+{
+    "orders": [
+        {
+            "id": 1,
+            "order_details": [
+                {
+                    "id": 1,
+                    "quantity": 1,
+                    "product_id": "the_odyssey",
+                    "price": "100000.99",
+                    "product": {
+                        "passenger_capacity": 101,
+                        "id": "the_odyssey",
+                        "maximum_speed": 5,
+                        "in_stock": 10,
+                        "title": "The Odyssey"
+                    },
+                    "image": "http://www.example.com/airship/images/the_odyssey.jpg"
+                }
+            ]
+        }
+    ],
+    "total": 7610
 }
 ```
 
