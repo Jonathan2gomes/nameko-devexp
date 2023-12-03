@@ -187,3 +187,37 @@ class GatewayService(object):
             serialized_data['order_details']
         )
         return result['id']
+
+    @http(
+        "GET", "/orders",
+        expected_exceptions=OrderNotFound
+    )
+    def list_orders(self, request):
+        """Gets a paginated list of orders.
+
+        Example request::
+
+            /orders?page=1&per_page=10
+
+        The response contains a paginated list of orders in a json document::
+
+            {
+                "orders": [...],
+                "total": 100
+            }
+        """
+
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+
+        orders = self.orders_rpc.list_orders(page=page, per_page=per_page)
+        total_orders = self.orders_rpc.get_total_orders()
+
+        response_data = {
+            "orders": orders,
+            "total": total_orders
+        }
+
+        return Response(
+            json.dumps(response_data), mimetype='application/json'
+        )

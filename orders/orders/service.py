@@ -1,6 +1,7 @@
 from nameko.events import EventDispatcher
 from nameko.rpc import rpc
 from nameko_sqlalchemy import DatabaseSession
+from sqlalchemy import func
 
 from orders.exceptions import NotFound
 from orders.models import DeclarativeBase, Order, OrderDetail
@@ -66,3 +67,14 @@ class OrdersService:
         order = self.db.query(Order).get(order_id)
         self.db.delete(order)
         self.db.commit()
+
+    @rpc
+    def list_orders(self, page=1, per_page=10):
+        query = self.db.query(Order).order_by(Order.created_at.asc())
+        paginated_orders = query.limit(per_page).offset((page - 1) * per_page).all()
+
+        return [OrderSchema().dump(order).data for order in paginated_orders]
+
+    @rpc
+    def get_total_orders(self):
+        return self.db.query(func.count(Order.id)).scalar()
