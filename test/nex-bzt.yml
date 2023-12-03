@@ -35,7 +35,7 @@ scenarios:
           "passenger_capacity": ${passenger_capacity},
           "maximum_speed": ${maximum_speed},
           "in_stock": ${in_stock}
-        }          
+        }
       assert:
       - contains:
         - 200
@@ -54,7 +54,7 @@ scenarios:
       label: product-get
       think-time: uniform(0s, 0s)
       method: GET
-        
+
       assert:
       - contains:
         - 200
@@ -85,17 +85,17 @@ scenarios:
       extract-jsonpath:
         order_id: $.id
         default: NOT_FOUND
-  
+
     - if: '"${order_id}" == "NOT_FOUND"'
       then:
         - action: continue
-  
+
     # 4. Get Orders
     - url: /orders/${order_id}
       label: order-get
       think-time: uniform(0s, 0s)
       method: GET
-        
+
       assert:
       - contains:
         - 200
@@ -104,7 +104,23 @@ scenarios:
       extract-jsonpath:
         order_id: $.id
         default: NOT_FOUND
-        
+
+
+      # 5. Delete Product
+    - url: /products/${product_id}
+      label: product-delete
+      think-time: uniform(0s, 0s)
+      method: DELETE
+
+      assert:
+        - contains:
+            - 200
+          subject: http-code
+          not: false
+      extract-jsonpath:
+        product_key: $.id
+        default: NOT_FOUND
+
     - if: '"${order_id}" == "NOT_FOUND"'
       then:
         - action: continue
