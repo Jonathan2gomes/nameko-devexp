@@ -60,3 +60,7 @@ curl -s -X DELETE "${STD_APP_URL}/products/the_odyssey" | jq .
 # Test: Delete nonexistent Product
 echo "=== Deleting product nonexistent product ==="
 curl -s -X DELETE "${STD_APP_URL}/products/nonexistent_product" | jq .
+
+# Test: List All Orders (Paginated)
+echo "=== Listing All Orders (Paginated) ==="
+curl -s "${STD_APP_URL}/orders?page=1&per_page=10" | jq .
